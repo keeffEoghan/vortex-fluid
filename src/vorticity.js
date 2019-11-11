@@ -1,45 +1,51 @@
 /**
- * Fluid particles - fluid continuum properties described at discrete particle
- * locations; the Lagrangian view.
- * These denote vorticity and position space (maybe more porperties later, as in
+ * Vorticity particles - fluid continuum properties described at discrete particle
+ * locations; the Lagrangian view - also known as _vortons_.
+ * These denote vorticity and position space (maybe more properties too, as in
  * SPH or MPM).
- * Properties evolve through interpolation between the particles and
- * motion/exchange/creation of the particles through the fluid (simplifying some
- * concepts such as fluid advection and conservation of mass).
+ * Properties evolve through motion/exchange/creation of the particles through the
+ * fluid (simplifying some concepts such as fluid advection and conservation of mass),
+ * and are interpolated between the particles.
  *
  * Code arranged to separate functions/behaviour from data/containers.
  *
+ * @see [_Fluid Simulation for Video Games_ series by Dr. Michael J. Gourlay](https://software.intel.com/en-us/articles/fluid-simulation-for-video-games-part-1/)
  * @see [Vorticity equations](https://en.wikipedia.org/wiki/Vorticity_equation)
  *
+ * @todo Port to GLSL.
  * @todo Adapt a 2D version of `vorticityToVelocity` (e.g: no tilt/stretch/cross).
  */
 
-import { sub, magSq, cross3 } from '@thi.ng/vectors';
+import { sub, magSq, cross3, mulN } from '@thi.ng/vectors';
 
-export const inv4Pi = 1/(4*Math.PI);
+const _2over3 = 2/3;
 
 /**
- * Compute velocity from vorticity using the Biot-Savart law for a vortex particle
- * with finite core size.
+ * Compute velocity from vorticity using the [Biot-Savart law](https://en.wikipedia.org/wiki/Biot%E2%80%93Savart_law#Aerodynamics_applications)
+ * for a vortex particle with finite core size.
  *
  * @param {vec3} queryPos Position at which to compute velocity.
  * @param {vec3} vortonPos Vorton position.
  * @param {vec3} angularVel Vorton angular velocity.
  * @param {float} radius Vorton radius.
  * @param {float} spreadFactor Amount by which to scale vorton radius.
- * @param {float?} vorticityFactor Amount by which to scale vorton vorticity; if given,
- *     must be equal to `spreadFactor**-3`.
+ * @param {float} [vorticityFactor=1] Amount by which to scale vorton vorticity; if
+ *     given, should be equal to `spreadFactor**-3` (the default).
+ * @param {array} [out=[]] The array in which to store the resulting vector; if not
+ *     given, a new array is created.
  *
  * @returns {vec3} Velocity contribution due to the given vorton.
  */
 export function vorticityToVelocity(queryPos, vortonPos, angularVel, radius,
-        spreadFactor = 1, vorticityFactor = (spreadFactor == 1 || spreadFactor**-3)) {
+        spreadFactor = 1,
+        vorticityFactor = +(spreadFactor === 1 || spreadFactor**-3),
+        out = []) {
     const vortonToQuery = sub([], queryPos, vortonPos);
 
-    // Using `x**2` to avoid `sqrt` here.
     const r = radius*spreadFactor;
     const r2 = r*r;
     const r3 = r2*r;
+    // Using `x**2` to avoid `sqrt` here.
     const d2 = magSq(vortonToQuery);
 
     /**
@@ -62,8 +68,14 @@ export function vorticityToVelocity(queryPos, vortonPos, angularVel, radius,
      *     (The above distance factor, mollified within the threshold:)
      *     `distFactor`
      *
-     * This simplifies (the `4*Math.PI` cancel; and
-     * [`vorticity === angularVel*2`](https://en.wikipedia.org/wiki/Vorticity):
+     * The above simplifies to the below (the `4*Math.PI` cancel; and
+     * [`vorticity === angularVel*2`](https://en.wikipedia.org/wiki/Vorticity)):
+     *     `(2/3*r3)*cross(vorticity, vortonToQuery)/distFactor`
+     *
+     * `vorticityFactor` is separate, it scales the resulting vorticity in proportion
+     * to `spreadFactor`.
      */
-    return 2/3*r3*cross3([], angularVel, vortonToQuery)/distFactor*vorticityFactor;
+    return mulN(out,
+        cross3(out, angularVel, vortonToQuery),
+        _2over3*r3/distFactor*vorticityFactor);
 }
