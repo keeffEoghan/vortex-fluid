@@ -15,10 +15,10 @@ import { map, range, each, wrapGet, wrapIndex } from '../util/array';
  */
 export function getGPGPUUniforms(regl, setup, bound = 1) {
     const uniforms = {
-        step: regl.prop('step'),
+        stepNow: regl.prop('step'),
         steps: regl.prop('steps.length'),
         stepsPast: (c, { steps: { length: s } }) => s-bound,
-        pass: regl.prop('pass'),
+        passNow: regl.prop('pass'),
         passes: regl.prop('passes.length'),
         dt: regl.prop('dt'),
         tick: regl.context('tick'),

@@ -1,15 +1,22 @@
 /**
- * The draw step for a GPGPU particle simulation.
- * Requires setup with preprocessor macros. See `macroGPGPUPass`.
+ * Drawing a GPGPU particle simulation.
+ * Requires setup with preprocessor macros - see `macroGPGPUDraw`.
  *
- * @see [getGPGPUDraw]{@link ../draw.js}
- * @see [macroGPGPUPass]{@link ../macros.js}
+ * @see [getGPGPUDraw]{@link ../draw.js#getGPGPUDraw}
+ * @see [macroGPGPUDraw]{@link ../macros.js#macroGPGPUDraw}
  */
 
 precision highp float;
 
-varying float state;
+varying float stepIndex;
+varying float life;
+
+const vec3 colorAlive = vec3(0.2, 0.2, 1.0);
+const vec3 colorDead = vec3(1.0, 0.2, 0.2);
 
 void main() {
-    gl_FragColor = vec4(vec3(mix(0.0, 1.0, state/float(GPGPUStepsPast-1))), 1.0);
+    vec3 color = mix(colorDead, colorAlive, life);
+
+    // gl_FragColor = vec4(color, stepIndex/float(GPGPUStepsPast-1));
+    gl_FragColor = vec4(color, 1.0);
 }

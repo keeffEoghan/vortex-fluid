@@ -1,9 +1,9 @@
 /**
- * The draw step for a GPGPU particle simulation.
- * Requires setup with preprocessor macros. See `macroGPGPUPass`.
+ * Drawing a GPGPU particle simulation.
+ * Requires setup with preprocessor macros - see `macroGPGPUDraw`.
  *
- * @see [getGPGPUDraw]{@link ../draw.js}
- * @see [macroGPGPUPass]{@link ../macros.js}
+ * @see [getGPGPUDraw]{@link ../draw.js#getGPGPUDraw}
+ * @see [macroGPGPUDraw]{@link ../macros.js#macroGPGPUDraw}
  */
 
 #define texturePos GPGPUTexture_0
@@ -14,6 +14,8 @@
 #define channelsLife GPGPUChannels_1
 #define channelsAcc GPGPUChannels_2
 
+precision highp float;
+
 attribute float index;
 
 uniform sampler2D states[GPGPUStepsPast*GPGPUTextures];
@@ -21,18 +23,24 @@ uniform vec2 dataShape;
 uniform float steps;
 uniform float pointSize;
 
-varying float state;
+varying float stepIndex;
+varying float life;
+
+const float lifetime = 10.0;
 
 #pragma glslify: indexGPGPUState = require('./util/index-state');
 
 void main() {
     vec3 lookup = indexGPGPUState(index, dataShape, steps);
 
-    state = lookup.z;
+    stepIndex = lookup.z;
 
-    vec4 state = texture2D(states[(int(state)*GPGPUTextures)+texturePos], lookup.xy);
+    vec4 state = texture2D(states[(int(stepIndex)*GPGPUTextures)+texturePos], lookup.xy);
     vec3 pos = state.channelsPos;
 
+    life = state.channelsLife/lifetime;
+
     gl_Position = vec4(pos, 1.0);
+    // gl_PointSize = pointSize*life;
     gl_PointSize = pointSize;
 }

@@ -1,9 +1,9 @@
 /**
  * The update step for a GPGPU particle simulation.
- * Requires setup with preprocessor macros. See `macroGPGPUPass`.
+ * Requires setup with preprocessor macros - see `macroGPGPUStepPass`.
  *
- * @see [getGPGPUStep]{@link ../step.js}
- * @see [macroGPGPUPass]{@link ../macros.js}
+ * @see [getGPGPUStep]{@link ../step.js#getGPGPUStep}
+ * @see [macroGPGPUStepPass]{@link ../macros.js#macroGPGPUStepPass}
  */
 
 #define texturePos GPGPUTexture_0
@@ -45,7 +45,7 @@ precision highp float;
 
 uniform sampler2D states[GPGPUStepsPast*GPGPUTextures];
 uniform float dt;
-uniform float tick;
+uniform float time;
 
 varying vec2 uv;
 
@@ -55,13 +55,16 @@ varying vec2 uv;
 
 const vec3 g = vec3(0, -0.00098, 0);
 const vec3 spawnPos = vec3(0);
-const vec3 spawnAcc = vec3(0, 0.25, 0);
-const float spawnLife = 10.0;
+const vec3 spawnAcc = vec3(0.5, 0.5, 0);
+const float lifetime = 10.0;
 
 void main() {
     // Sample textures.
 
-    GPGPUTapSamples(sampled, states, uv)
+    vec2 st = (uv+vec2(1.0))*0.5;
+
+    GPGPUTapSamples(sampled, states, st)
+    // GPGPUTapSamples(sampled, states, uv)
 
     // Get values.
 
@@ -95,17 +98,17 @@ void main() {
     // Update values.
 
     #if defined(outputLife) || defined(outputPos) || defined(outputAcc)
-        float life = max(life1-dt, 0.0);
+        float life = life1-dt;
         float alive = step(0.0, life);
     #endif
     #ifdef outputLife
-        life = mix(spawnLife, life, alive);
+        life = max(0.0, mix(lifetime, life, alive));
     #endif
     #ifdef outputPos
         vec3 pos = mix(spawnPos, verlet(acc1, pos0, pos1, dt), alive);
     #endif
     #ifdef outputAcc
-        vec3 acc = mix(spawnAcc+vec3(cos(tick*0.001), cos(tick*0.001), 0),
+        vec3 acc = mix(spawnAcc+vec3(vec2(sin(time*0.001), cos(time*0.001))*100.0, 0),
             acc1+(g*dt),
             alive);
     #endif

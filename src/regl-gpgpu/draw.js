@@ -1,6 +1,5 @@
 /**
- * GPGPU particles drawing, may be used with this module's GPGPU setup or anything else
- * given applicable parameters.
+ * GPGPU particles drawing, may be used with this module's GPGPU setup.
  */
 
 import { macroGPGPUDraw } from './macros';
@@ -10,14 +9,14 @@ import defaultVert from './draw.vert.glsl';
 import defaultFrag from './draw.frag.glsl';
 
 /**
- * 
+ * Draws particles form data textures.
  */
 export function getDrawParticles(regl, setup, out = setup) {
     const {
             drawVert = defaultVert,
             drawFrag = defaultFrag,
             drawIndices: indices = getGPGPUDrawIndices(regl, setup),
-            drawUniforms: uniforms = Object.assign(getGPGPUUniforms(regl, setup, 0), {
+            drawUniforms: uniforms = Object.assign(getGPGPUUniforms(regl, setup, 1), {
                     pointSize: (c, {
                             drawPointSize: s = 10,
                             drawPointClamp: r = regl.limits.pointSizeDims
@@ -31,7 +30,7 @@ export function getDrawParticles(regl, setup, out = setup) {
     out.drawVert = macros+drawVert;
     out.drawFrag = macros+drawFrag;
     out.drawUniforms = uniforms;
-    
+
     const drawIndices = out.drawIndices = regl.buffer(indices);
 
     return regl({

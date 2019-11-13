@@ -96,7 +96,7 @@ export function getGPGPUSetup(regl, setup = {}, out = setup) {
             radius,
             width,
             height,
-            scale = 3,
+            scale = 6,
             // scale = 10,
             steps = 2,
             values = [1],
@@ -168,7 +168,13 @@ export function getGPGPUSetup(regl, setup = {}, out = setup) {
         };
 
         const textures = map(addTexture(step, index, passSetup), pass);
-        const framebuffer = regl.framebuffer({ color: textures, depthStencil: false });
+
+        const framebuffer = regl.framebuffer({
+            width: passSetup.width,
+            height: passSetup.height,
+            color: textures,
+            depthStencil: false
+        });
 
         (passes[step] || (passes[step] = []))[index] = {
             // Meta info.

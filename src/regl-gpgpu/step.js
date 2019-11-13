@@ -74,7 +74,7 @@ export function getGPGPUStep(regl, setup, out = setup) {
         // frag: (c, props) => macroGPGPUStepPass(props)+props.stepFrag,
         attributes: { position: (c, { stepPositions: p = stepPositions }) => p },
         uniforms,
-        count: (c, { stepCount: count = 3 }) => count,
+        count: (c, { stepCount: count = positions.length*0.5 }) => count,
         depth: { enable: false },
         framebuffer: (c, { steps, step, pass, textures }) => wrapGet(step, steps)[pass]
     });
