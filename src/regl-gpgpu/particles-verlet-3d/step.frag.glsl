@@ -27,7 +27,7 @@
     GPGPUUseReads_1
     #define readsLifeLife1 GPGPUReads_1_0
 #endif
-#ifdef GPGPUOutput_1
+#ifdef GPGPUOutput_2
     #define outputAcc GPGPUOutput_2
     GPGPUUseReads_2
     #define readsAccAcc1 GPGPUReads_2_0
@@ -56,7 +56,7 @@ varying vec2 uv;
 const vec3 g = vec3(0, -0.00098, 0);
 const vec3 spawnPos = vec3(0);
 const vec3 spawnAcc = vec3(0, 0.25, 0);
-const float spawnLife = 10000.0;
+const float spawnLife = 10.0;
 
 void main() {
     // Sample textures.
@@ -96,7 +96,7 @@ void main() {
 
     #if defined(outputLife) || defined(outputPos) || defined(outputAcc)
         float life = max(life1-dt, 0.0);
-        float alive = clamp(0.0, 1.0, life/spawnLife);
+        float alive = step(0.0, life);
     #endif
     #ifdef outputLife
         life = mix(spawnLife, life, alive);

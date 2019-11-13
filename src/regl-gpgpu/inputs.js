@@ -8,12 +8,12 @@ import { map, range, each, wrapGet, wrapIndex } from '../util/array';
  * @export
  * @param {regl} regl The `regl` instance to use.
  * @param {object} setup The GPGPU setup to use - see `getGPGPUSetup`.
- * @param {number} bound The number of steps currently bound to outputs, and
- *     unavailable as inputs.
+ * @param {number} [bound=1] The number of steps bound to outputs, and unavailable as
+ *     inputs.
  *
  * @returns {object} The `regl` uniforms object for the given GPGPU `setup`.
  */
-export function getGPGPUUniforms(regl, setup, bound = 0) {
+export function getGPGPUUniforms(regl, setup, bound = 1) {
     const uniforms = {
         step: regl.prop('step'),
         steps: regl.prop('steps.length'),
@@ -23,7 +23,7 @@ export function getGPGPUUniforms(regl, setup, bound = 0) {
         dt: regl.prop('dt'),
         tick: regl.context('tick'),
         time: regl.context('time'),
-        size: regl.prop('size.shape')
+        dataShape: regl.prop('size.shape')
     };
 
     // Set up uniforms for the steps in the past [1...(steps-1)] of the current step.
@@ -33,29 +33,18 @@ export function getGPGPUUniforms(regl, setup, bound = 0) {
     const numTextures = groupsTextures.length;
 
     const addTexture = (past, texture) =>
-        uniforms[`states[${(past*numTextures)+texture}]`] =
-            (c, { step, textures }) => {
-                const s = wrapIndex(step+past+bound, textures);
-                const out = wrapGet(step+past+bound, textures)[texture].texture;
-                
-                console.log('read:', {
-                        b: (past*numTextures)+texture, s, texture, bound,
-                        texture: wrapGet(step+past+bound, textures)[texture].number,
-                        out
-                    });
+        uniforms[`states[${(past*numTextures)+texture}]`] = (c, { step, textures }) =>
+                wrapGet(step+past+bound, textures)[texture].texture;
 
-                return out;
-            };
-
-    for(let past = numSteps-bound; past >= 0; --past) {
+    for(let past = numSteps-1-bound; past >= 0; --past) {
         each((values, texture) => addTexture(past, texture), groupsTextures);
     }
 
     return uniforms;
 }
 
-export const numGPGPUPairIndices = ({ steps: { length: s }, size: { index: i } }) =>
-    (s-1)*2*i;
+export const numGPGPUPairIndices =
+    ({ steps: { length: s }, size: { index: i } }, bound = 0) => (s-1-bound)*2*i;
 
-export const getGPGPUDrawIndices = (regl, setup) => (setup.indices ||
-    regl.buffer(map((v, i) => i, range(numGPGPUPairIndices(setup)), 0)));
+export const getGPGPUDrawIndices = (regl, setup, bound = 0) =>
+    map((v, i) => i, range(numGPGPUPairIndices(setup, bound)), 0);

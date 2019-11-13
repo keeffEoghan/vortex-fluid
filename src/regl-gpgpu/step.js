@@ -60,7 +60,7 @@ export function getGPGPUStep(regl, setup, out = setup) {
         },
         passes);
 
-    const positionsBuffer = out.stepPositions = regl.buffer(positions);
+    const stepPositions = out.stepPositions = regl.buffer(positions);
 
     out.stepUniforms = uniforms;
     out.timing = timing;
@@ -72,36 +72,12 @@ export function getGPGPUStep(regl, setup, out = setup) {
         frag: (c, { stepFrag: f, stepFrags: fs, pass: p }) => (fs[p] || f),
         // vert: (c, props) => macroGPGPUStepPass(props)+(props.stepVert || defaultVert),
         // frag: (c, props) => macroGPGPUStepPass(props)+props.stepFrag,
-        attributes: { position: (c, { positions: p = positionsBuffer }) => p },
+        attributes: { position: (c, { stepPositions: p = stepPositions }) => p },
         uniforms,
         count: (c, { stepCount: count = 3 }) => count,
-        framebuffer: (c, { steps, step, pass, textures }) => {
-            const s = wrapIndex(step, steps);
-            const out = wrapGet(step, steps)[pass];
-
-            console.log('bind:', {
-                    s, pass,
-                    textures: map(({ number: t }, i) => i+':'+t, textures[s]).join(),
-                    out
-                });
-
-            return out;
-        }
+        depth: { enable: false },
+        framebuffer: (c, { steps, step, pass, textures }) => wrapGet(step, steps)[pass]
     });
-
-    // const go = (props) => {
-    //     const { steps, step: st, pass, textures } = props;
-    //     const s = wrapIndex(st, steps);
-    //     const out = wrapGet(st, steps)[pass];
-
-    //     console.log('bind:', {
-    //             s, pass,
-    //             textures: map(({ number: b }, i) => b+':'+i, textures[s]).join(),
-    //             out
-    //         });
-
-    //     return out.use(() => step(props));
-    // };
 
     let state;
 
@@ -117,7 +93,6 @@ export function getGPGPUStep(regl, setup, out = setup) {
 
         each((pass, p) => {
                 state.pass = p;
-                // go((onPass)? onPass(state) : state);
                 step((onPass)? onPass(state) : state);
             },
             passes);

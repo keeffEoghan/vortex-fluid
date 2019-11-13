@@ -110,7 +110,7 @@ export const checkGPGPUMacros = (props, key, macros = props.macros) =>
  *
  * @see checkGPGPUMacros
  * @see setupGLSLList
- * @see [getGPGPUSamplesMap]{@link ./setup.js#getGPGPUSamplesMap}
+ * @see [getGPGPUSamplesMap]{@link ./maps.js#getGPGPUSamplesMap}
  * @see [getGPGPUSetup]{@link ./setup.js#getGPGPUSetup}
  *
  * @example
@@ -202,7 +202,7 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
         :   reduce((out, valueReads, v) =>
                     out+`\n#define ${m}UseReads_${v} `+
                         setupGLSLList('int', valueReads, `${m}Reads_${v}`,
-                            qualifier, version)+'\n',
+                            qualifier, version),
                 passReads, ''))+
         '\n'));
 }
@@ -213,8 +213,8 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
  * Caches the result if `macros` generation is enabled, to help reuse shaders.
  *
  * @see checkGPGPUMacros
+ * @see [getGPGPUGroupsMap]{@link ./maps.js#getGPGPUGroupsMap}
  * @see [getGPGPUSetup]{@link ./setup.js#getGPGPUSetup}
- * @see [getGPGPUGroupsMap]{@link ./setup.js#getGPGPUGroupsMap}
  *
  * @example
  *     const props = {
@@ -260,10 +260,6 @@ export function macroGPGPUValues(props) {
         JSON.stringify({ m, textures, values, numSteps, numPasses });
 
     return (cache[c] || (cache[c] =
-        `#define ${m}Textures ${textures.length}\n`+
-        `#define ${m}Passes ${numPasses}\n`+
-        `#define ${m}Steps ${numSteps}\n`+
-        '\n'+
         reduce((out, texture, b) => {
                 let sum = 0;
 
@@ -273,7 +269,11 @@ export function macroGPGPUValues(props) {
                             channelsMap.slice(sum, sum += values[v])}\n`,
                     texture, out);
             },
-            textures, '')));
+            textures, '')+
+        `#define ${m}Textures ${textures.length}\n`+
+        `#define ${m}Passes ${numPasses}\n`+
+        `#define ${m}Steps ${numSteps}\n`+
+        `#define ${m}StepsPast ${numSteps-1}\n`));
 }
 
 /**
@@ -285,8 +285,8 @@ export function macroGPGPUValues(props) {
  * @see checkGPGPUMacros
  * @see macroGPGPUValues
  * @see macroGPGPUSamples
+ * @see [getGPGPUGroupsMap]{@link ./maps.js#getGPGPUGroupsMap}
  * @see [getGPGPUSetup]{@link ./setup.js#getGPGPUSetup}
- * @see [getGPGPUGroupsMap]{@link ./setup.js#getGPGPUGroupsMap}
  *
  * @example
  *     const props = {
@@ -306,8 +306,8 @@ export function macroGPGPUValues(props) {
  *         '#define GPGPUTextures 2\n'+ // Total number of textures (for states array).
  *         '#define GPGPUPasses 2\n'+ // Total number of passes (for states array).
  *         '#define GPGPUSteps 2\n'+ // Total number of steps (for states array).
- *         '\n'+
  *         '#define GPGPUStepsPast 1\n'+ // The past number of steps (for states array).
+ *         '\n'+
  *         '#define GPGPUPass 0\n'+ // The current pass (need shaders per pass).
  *         '\n'+
  *         '#define GPGPUBound_0 0\n'+ // Full output for value 0.
@@ -329,8 +329,8 @@ export function macroGPGPUValues(props) {
  *         '#define drawTextures 2\n'+ // Total number of textures (for states array).
  *         '#define drawPasses 2\n'+ // Total number of passes (for states array).
  *         '#define drawSteps 2\n'+ // Total number of steps (for states array).
- *         '\n'+
  *         '#define drawStepsPast 1\n'+ // Total number of steps (for states array).
+ *         '\n'+
  *         '#define drawPass 1\n'+ // The current pass (need shaders per pass).
  *         '\n'+
  *         '#define drawBound_1 0\n'+ // Full output for value 1.
@@ -356,8 +356,8 @@ export function macroGPGPUValues(props) {
  *         '#define drawTextures 2\n'+ // Total number of textures (for states array).
  *         '#define drawPasses 1\n'+ // Total number of passes (for states array).
  *         '#define drawSteps 3\n'+ // Total number of steps (for states array).
- *         '\n'+
  *         '#define drawStepsPast 2\n'+ // Total number of steps (for states array).
+ *         '\n'+
  *         '#define drawPass 0\n'+ // The current pass (need shaders per pass).
  *         '\n'+
  *         '#define drawBound_0 0\n'+ // Full output for value 0.
@@ -399,7 +399,6 @@ export function macroGPGPUStepPass(props) {
 
     const {
             macros: m = defaultMacros,
-            steps: { length: numSteps },
             pass: p,
             values,
             groups: { textures, passes }
@@ -408,12 +407,10 @@ export function macroGPGPUStepPass(props) {
     const pass = passes[p];
     const macroSamples = macroGPGPUSamples(props);
     const macroValues = macroGPGPUValues(props);
-    const c = key+':'+JSON.stringify({ m, numSteps, textures, values, p, pass });
+    const c = key+':'+JSON.stringify({ m, textures, values, p, pass });
 
     return macroSamples+macroValues+(cache[c] || (cache[c] =
-        `#define ${m}StepsPast ${numSteps-1}\n`+
         `#define ${m}Pass ${p}\n`+
-        '\n'+
         reduce((out, texture, bound) => {
                 let sum = 0;
 
@@ -433,11 +430,5 @@ export function macroGPGPUDraw(props) {
 
     if(created !== false) { return created; }
 
-    const { macros: m = defaultMacros, steps: { length: numSteps } } = props;
-    const macroValues = macroGPGPUValues(props);
-    const c = key+':'+JSON.stringify({ m, numSteps });
-
-    return macroValues+(cache[c] || (cache[c] =
-        `#define ${m}StepsPast ${numSteps}\n`+
-        '\n'));
+    return macroGPGPUValues(props);
 }

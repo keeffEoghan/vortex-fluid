@@ -17,15 +17,22 @@
 attribute float index;
 
 uniform sampler2D states[GPGPUStepsPast*GPGPUTextures];
-uniform vec2 size;
+uniform vec2 dataShape;
 uniform float steps;
+uniform float pointSize;
+
+varying float state;
 
 #pragma glslify: indexGPGPUState = require('./util/index-state');
 
 void main() {
-    vec3 lookup = indexGPGPUState(index, size, steps);
-    vec4 state = texture2D(states[(int(lookup.z)*GPGPUTextures)+texturePos], lookup.xy);
+    vec3 lookup = indexGPGPUState(index, dataShape, steps);
+
+    state = lookup.z;
+
+    vec4 state = texture2D(states[(int(state)*GPGPUTextures)+texturePos], lookup.xy);
     vec3 pos = state.channelsPos;
 
     gl_Position = vec4(pos, 1.0);
+    gl_PointSize = pointSize;
 }

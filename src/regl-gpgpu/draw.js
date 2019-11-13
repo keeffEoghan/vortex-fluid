@@ -17,26 +17,38 @@ export function getDrawParticles(regl, setup, out = setup) {
             drawVert = defaultVert,
             drawFrag = defaultFrag,
             drawIndices: indices = getGPGPUDrawIndices(regl, setup),
-            drawUniforms: uniforms = getGPGPUUniforms(regl, setup, 0)
+            drawUniforms: uniforms = Object.assign(getGPGPUUniforms(regl, setup, 0), {
+                    pointSize: (c, {
+                            drawPointSize: s = 10,
+                            drawPointClamp: r = regl.limits.pointSizeDims
+                        }) =>
+                        Math.max(r[0], Math.min(s, r[1]))
+                })
         } = setup;
 
     const macros = macroGPGPUDraw(setup);
 
     out.drawVert = macros+drawVert;
     out.drawFrag = macros+drawFrag;
-    out.drawIndices = indices;
     out.drawUniforms = uniforms;
+    
+    const drawIndices = out.drawIndices = regl.buffer(indices);
 
     return regl({
         vert: regl.prop('drawVert'),
         frag: regl.prop('drawFrag'),
         // vert: (c, props) => macroGPGPUDraw(props)+(props.drawVert || defaultVert),
         // frag: (c, props) => macroGPGPUDraw(props)+(props.drawFrag || defaultFrag),
-        attributes: { index: (c, { indices: i = indices }) => i },
+        attributes: { index: (c, { drawIndices: i = drawIndices }) => i },
         uniforms,
+        primitive: (c, { primitive: p = 'points' }) => p,
+        lineWidth: (c, {
+                drawLineWidth: w = 10,
+                drawLineClamp: r = regl.limits.lineWidthDims
+            }) =>
+            Math.max(r[0], Math.min(w, r[1])),
         count: (c, props) =>
-            (('drawCount' in props)? props.drawCount : numGPGPUPairIndices(props)),
-        primitive: (c, { primitive: p = 'lines' }) => p
+            (('drawCount' in props)? props.drawCount : numGPGPUPairIndices(props))
     });
 }
 

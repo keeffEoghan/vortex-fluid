@@ -4,12 +4,18 @@
   "main": "src/index.js",
   "author": "Eoghan O'Keeffe <epok.tech@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": "v10.16.3",
+    "yarn": "1.19.0"
+  },
   "scripts": {
-    "start": "parcel ./src/index.html"
+    "start": "parcel --log-level verbose ./src/index.html",
+    "build": "parcel build ./src/index.html --experimental-scope-hoisting"
   },
   "dependencies": {
     "@thi.ng/matrices": "^0.5.1",
     "@thi.ng/vectors": "^3.1.0",
+    "WebGLDeveloperTools": "https://github.com/KhronosGroup/WebGLDeveloperTools",
     "parcel-bundler": "^1.12.3",
     "regl": "^1.3.13"
   },

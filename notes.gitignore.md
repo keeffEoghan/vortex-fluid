@@ -120,3 +120,17 @@
       epok.tech  4 minutes ago
       Nice on guys these are great pointers - I’ll look into this and consider the best approach :slightly_smiling_face:
       ```
+
+## Bugs
+
+- Getting `GL ERROR :GL_INVALID_OPERATION : glDrawArrays: Source and destination textures of the draw are the same.` across separately-scoped commands:
+  - It seems that `regl`'s texture binding/unbinding logic doesn't unbind textures unless another texture to be bound in the command needs the unit another texture is using. This can leave textures bound if they are not explicitly unbound; this may be fine/efficient usually, but it can cause issues if you've just bound a texture in one command, then render to the same texture in a framebuffer in the next command: the texture is the color attachment for the framebuffer, _and_ it's still bound to a texture unit from the previous command, which seems to cause a bug in Chrome at least. It also seems to be a side-effect leaking out of the functional abstraction. Perhaps framebuffers should always unbind their texture attachments from any active bindings; or perhaps textures should always be unbound at the end of a command if their `bindCount` falls to `0`.
+  - Check further:
+    - Any issues with the framebuffer part of this? Should the framebuffer binding ensure that its color attachments are unbound from any texture units?
+  - Possible fixes:
+    - Don't bind the extra 2 textures recently used by the framebuffer in the previous `step` command?
+    - Explicitly unbind the framebuffer's textures before they're rendered to?
+    - Patch/PR `regl` to unbind textures/framebuffers?
+      - [Texture bind](https://github.com/regl-project/regl/blob/8c4b9c1bf78ff9a85366bf3441c084a1cd8b1f2c/lib/texture.js#L1178)
+      - [Texture unbind](https://github.com/regl-project/regl/blob/8c4b9c1bf78ff9a85366bf3441c084a1cd8b1f2c/lib/texture.js#L1208)
+      - [Framebuffer update and binding](https://github.com/regl-project/regl/blob/8c4b9c1bf78ff9a85366bf3441c084a1cd8b1f2c/lib/framebuffer.js#L296)

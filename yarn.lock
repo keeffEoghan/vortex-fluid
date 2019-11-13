@@ -873,6 +873,10 @@
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.2.tgz#690a1475b84f2a884fd07cd797c00f5f31356ea8"
   integrity sha512-ce5d3q03Ex0sy4R14722Rmt6MT07Ua+k4FwDfdcToYJcMKNtRVQvJ6JCAPdAmAnbRb6CsX6aYb9m96NGod9uTw==
 
+"WebGLDeveloperTools@https://github.com/KhronosGroup/WebGLDeveloperTools":
+  version "0.0.0"
+  resolved "https://github.com/KhronosGroup/WebGLDeveloperTools#077e32c2db9278b2bc93b5286a7e32c3d44fe6c2"
+
 abab@^2.0.0:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.2.tgz#a2fba1b122c69a85caa02d10f9270c7219709a9d"
