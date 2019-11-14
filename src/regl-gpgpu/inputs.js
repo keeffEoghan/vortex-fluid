@@ -14,6 +14,10 @@ import { map, range, each, wrapGet, wrapIndex } from '../util/array';
  * @returns {object} The `regl` uniforms object for the given GPGPU `setup`.
  */
 export function getGPGPUUniforms(regl, setup, bound = 1) {
+    const cache = {
+        viewShape: [0, 0]
+    };
+
     const uniforms = {
         stepNow: regl.prop('step'),
         steps: regl.prop('steps.length'),
@@ -21,9 +25,18 @@ export function getGPGPUUniforms(regl, setup, bound = 1) {
         passNow: regl.prop('pass'),
         passes: regl.prop('passes.length'),
         dt: regl.prop('dt'),
+        stepTime: regl.prop('stepTime'),
         tick: regl.context('tick'),
         time: regl.context('time'),
-        dataShape: regl.prop('size.shape')
+        dataShape: regl.prop('size.shape'),
+        viewShape: ({ viewportWidth: w, viewportHeight: h }) => {
+            const s = cache.viewShape;
+
+            s[0] = w;
+            s[1] = h;
+
+            return s;
+        }
     };
 
     // Set up uniforms for the steps in the past [1...(steps-1)] of the current step.

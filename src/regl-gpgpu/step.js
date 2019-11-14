@@ -37,11 +37,11 @@ export function getGPGPUStep(regl, setup, out = setup) {
             stepVert = defaultVert,
             stepFrag,
             stepPositions: positions = defaultPositions,
-            stepUniforms: uniforms = getGPGPUUniforms(regl, setup, 1),
+            stepUniforms: uniforms = getGPGPUUniforms(regl, setup),
             timing = defaultTiming,
             // The initial time - `-1` for frame-time, or the current time for
             // real-time or constant-step. Should be reset if `out.timing` is changed.
-            time = ((timing === 'tick')? 0 : regl.now()),
+            stepTime = ((timing === 'tick')? 0 : regl.now()),
             groups: { passes }
         } = setup;
 
@@ -64,7 +64,7 @@ export function getGPGPUStep(regl, setup, out = setup) {
 
     out.stepUniforms = uniforms;
     out.timing = timing;
-    out.time = time;
+    out.stepTime = stepTime;
 
     // Uses the full-screen vertex shader setup by default.
     const step = regl({
@@ -84,10 +84,12 @@ export function getGPGPUStep(regl, setup, out = setup) {
     const withContext = (context) => {
         state.step++;
 
-        const { onPass, groups: { passes }, timing = defaultTiming, time: t0 } = state;
+        const {
+                onPass, groups: { passes }, timing = defaultTiming, stepTime: t0
+            } = state;
 
         // Step the timer - add the constant-step, or update to the current tick/time.
-        const t1 = state.time = ((isNaN(timing))? context[timing] : t0+timing);
+        const t1 = state.stepTime = ((isNaN(timing))? context[timing] : t0+timing);
 
         state.dt = t1-t0;
 

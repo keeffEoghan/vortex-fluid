@@ -2,33 +2,31 @@
  * GPGPU particles drawing, may be used with this module's GPGPU setup.
  */
 
-import { macroGPGPUDraw } from './macros';
-import { getGPGPUUniforms, getGPGPUDrawIndices, numGPGPUPairIndices } from './inputs.js';
+import { macroGPGPUDraw } from '../macros';
+import { getGPGPUUniforms, getGPGPUDrawIndices, numGPGPUPairIndices } from '../inputs.js';
 
 import defaultVert from './draw.vert.glsl';
 import defaultFrag from './draw.frag.glsl';
 
-/**
- * Draws particles form data textures.
- */
-export function getDrawParticles(regl, setup, out = setup) {
+export function getDrawParticlesVerlet3D(regl, setup, out = setup) {
     const {
             drawVert = defaultVert,
             drawFrag = defaultFrag,
             drawIndices: indices = getGPGPUDrawIndices(regl, setup),
-            drawUniforms: uniforms = Object.assign(getGPGPUUniforms(regl, setup, 1), {
-                    pointSize: (c, {
-                            drawPointSize: s = 10,
-                            drawPointClamp: r = regl.limits.pointSizeDims
-                        }) =>
-                        Math.max(r[0], Math.min(s, r[1]))
-                })
+            drawUniforms: uniforms = getGPGPUUniforms(regl, setup)
         } = setup;
 
     const macros = macroGPGPUDraw(setup);
 
     out.drawVert = macros+drawVert;
     out.drawFrag = macros+drawFrag;
+
+    (('pointSize' in uniforms) || (uniforms.pointSize = (c, {
+            drawPointSize: s = 10,
+            drawPointClamp: r = regl.limits.pointSizeDims
+        }) =>
+        Math.max(r[0], Math.min(s, r[1]))));
+
     out.drawUniforms = uniforms;
 
     const drawIndices = out.drawIndices = regl.buffer(indices);
@@ -47,8 +45,9 @@ export function getDrawParticles(regl, setup, out = setup) {
             }) =>
             Math.max(r[0], Math.min(w, r[1])),
         count: (c, props) =>
-            (('drawCount' in props)? props.drawCount : numGPGPUPairIndices(props))
+            (('drawCount' in props)? props.drawCount : numGPGPUPairIndices(props)),
+        depth: { enable: false }
     });
 }
 
-export default getDrawParticles;
+export default getDrawParticlesVerlet3D;

@@ -45,18 +45,22 @@ precision highp float;
 
 uniform sampler2D states[GPGPUStepsPast*GPGPUTextures];
 uniform float dt;
-uniform float time;
+uniform float stepTime;
+uniform vec2 lifetime;
 
 varying vec2 uv;
 
-#ifdef GPGPUOutput_0
+#ifdef outputPos
     #pragma glslify: verlet = require('../../physics/verlet');
+#endif
+
+#ifdef outputLife
+    #pragma glslify: random = require('glsl-random');
 #endif
 
 const vec3 g = vec3(0, -0.00098, 0);
 const vec3 spawnPos = vec3(0);
 const vec3 spawnAcc = vec3(0.5, 0.5, 0);
-const float lifetime = 10.0;
 
 void main() {
     // Sample textures.
@@ -98,30 +102,38 @@ void main() {
     // Update values.
 
     #if defined(outputLife) || defined(outputPos) || defined(outputAcc)
+        // float life = max(0.0, life1-dt);
         float life = life1-dt;
-        float alive = step(0.0, life);
+        // float alive = 1.0-step(life, 0.0);
+        float alive = ((life > 0.0)? 1.0 : 0.0);
     #endif
     #ifdef outputLife
-        life = max(0.0, mix(lifetime, life, alive));
+        float spawnedLife = min(lifetime[0], lifetime[1])+
+            abs((lifetime[0]-lifetime[1])*random(st*stepTime));
+
+        life = mix(spawnedLife, life, alive);
     #endif
     #ifdef outputPos
         vec3 pos = mix(spawnPos, verlet(acc1, pos0, pos1, dt), alive);
     #endif
     #ifdef outputAcc
-        vec3 acc = mix(spawnAcc+vec3(vec2(sin(time*0.001), cos(time*0.001))*100.0, 0),
-            acc1+(g*dt),
-            alive);
+        vec3 spawnedAcc = spawnAcc+
+            vec3(vec2(sin(stepTime), cos(stepTime))*1.0, 0);
+
+        vec3 acc = mix(spawnedAcc, acc1+(g*dt), alive);
     #endif
 
     // Output values.
 
     #ifdef outputPos
-        outputPos = pos;
+        // outputPos = pos;
+        outputPos = vec3(1, 0, 0);
     #endif
     #ifdef outputLife
         outputLife = life;
     #endif
     #ifdef outputAcc
-        outputAcc = acc;
+        // outputAcc = acc;
+        outputPos = vec3(0, 1, 0);
     #endif
 }

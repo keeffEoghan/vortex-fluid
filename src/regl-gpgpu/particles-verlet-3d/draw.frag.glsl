@@ -19,4 +19,5 @@ void main() {
 
     // gl_FragColor = vec4(color, stepIndex/float(GPGPUStepsPast-1));
     gl_FragColor = vec4(color, 1.0);
+    // gl_FragColor = vec4(color, 0.5);
 }

@@ -10,6 +10,11 @@ import { getGPGPUUniforms } from './inputs.js';
 import defaultVert from '../screen/index.vert.glsl';
 import defaultFrag from './test.frag.glsl';
 
+export const GPGPUTestDebug = self.GPGPUTestDebug = {
+    // range: [0, 256]
+    range: [-128, 128]
+};
+
 /**
  * Draws the values within GPGPU data textures.
  */
@@ -25,6 +30,9 @@ export function getGPGPUTest(regl, setup, out = setup) {
 
     out.testVert = macros+testVert;
     out.testFrag = macros+testFrag;
+
+    (('range' in uniforms) || (uniforms.range = () => GPGPUTestDebug.range));
+
     out.testUniforms = uniforms;
 
     const testPositions = out.testPositions = regl.buffer(positions);

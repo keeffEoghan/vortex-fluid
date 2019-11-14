@@ -190,21 +190,25 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
                         const si = `${m}Samples_${i}`;
                         const body = `sampled[s] = `+
                             `texture2D(states[(${si}[0]*${numTextures})+${si}[1]], `+
-                                'uv); ';
+                                'uv);';
 
-                        return ((i < passSamples.length-1)?
-                                `if(s == ${i}) { ${body} } else ${o}`
-                            :   `{ ${body} } `);
+                        return ((passSamples.length === 1)?
+                                body
+                            : ((i === 0)?
+                                `if(s == ${i}) { ${body} }`
+                            : ((i < passSamples.length-1)?
+                                `${o} else if(s == ${i}) { ${body} }`
+                            :   `${o} else { ${body} }`)));
                     },
                     passSamples, '')+
-                '}\n'))+
+                ' }\n\n'))+
         ((!passReads)? ''
         :   reduce((out, valueReads, v) =>
-                    out+`\n#define ${m}UseReads_${v} `+
+                    out+`#define ${m}UseReads_${v} `+
                         setupGLSLList('int', valueReads, `${m}Reads_${v}`,
-                            qualifier, version),
-                passReads, ''))+
-        '\n'));
+                            qualifier, version)+
+                        '\n',
+                passReads, ''))));
 }
 
 /**
@@ -269,7 +273,7 @@ export function macroGPGPUValues(props) {
                             channelsMap.slice(sum, sum += values[v])}\n`,
                     texture, out);
             },
-            textures, '')+
+            textures, '')+'\n'+
         `#define ${m}Textures ${textures.length}\n`+
         `#define ${m}Passes ${numPasses}\n`+
         `#define ${m}Steps ${numSteps}\n`+
