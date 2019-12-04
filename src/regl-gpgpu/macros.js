@@ -1,5 +1,5 @@
 /**
- * GLSL preprocessor macros for states of the GPGPU setup.
+ * GLSL preprocessor macros for states of the GPGPU state.
  *
  * Use caution when defining these, as each set of different macros will result in new
  * shaders and compilations, missing the cache here and in the rendering system - so,
@@ -13,20 +13,20 @@ export const channelsMap = 'rgba';
 export const defaultMacros = 'GPGPU';
 export const cache = {};
 
-export const setupGLSL3List = (type, a, name = 'name', qualifier = '') =>
+export const getGLSL3List = (type, a, name = 'name', qualifier = '') =>
     (qualifier && qualifier+' ')+`${type} ${name}[${a.length}] = `+
             `${type}[${a.length}](${reduce((out, v, i) =>
                     out+`${type}(${((Array.isArray(v))? v.join(', ') : v)})`+
                         ((i < a.length-1)? ', ' : ''),
                 a, '')});`;
 
-export const setupGLSL1ArrayList = (type, a, name = 'name', qualifier = '') =>
+export const getGLSL1ArrayList = (type, a, name = 'name', qualifier = '') =>
     `${(qualifier && qualifier+' ')}${type} ${name}[${a.length}];`+
     reduce((s, v, i) =>
             s+' '+`${name}[${i}] = ${type}(${((Array.isArray(v))? v.join(', ') : v)});`,
         a, '');
 
-export const setupGLSL1ConstList = (type, a, name = 'name') =>
+export const getGLSL1ConstList = (type, a, name = 'name') =>
     `const int ${name}_length = ${a.length};`+
     reduce((s, v, i) => s+
             ` const ${type} ${name}_${i} = `+
@@ -36,8 +36,8 @@ export const setupGLSL1ConstList = (type, a, name = 'name') =>
     `#define ${name}_index(i) `+reduce((s, v, i) =>
         ((i)? `((i == ${i})? ${name}_${i} : ${s})` : `${name}_${i}`), a, '')+'\n';
 
-export const setupGLSL1List = (type, a, name = 'name', qualifier = '') =>
-    ((qualifier === 'const')? setupGLSL1ConstList : setupGLSL1ArrayList)
+export const getGLSL1List = (type, a, name = 'name', qualifier = '') =>
+    ((qualifier === 'const')? getGLSL1ConstList : getGLSL1ArrayList)
         (type, a, name, qualifier);
 
 /**
@@ -50,15 +50,15 @@ export const setupGLSL1List = (type, a, name = 'name', qualifier = '') =>
  * before GLSL 3.0.
  *
  * @example
- *     setupGLSLList([0, 1], 'int') ===
+ *     getGLSLList([0, 1], 'int') ===
  *           'int name[2]; '+
  *           'name[0] = int(0); '+
  *           'name[1] = int(1);';
  *
- *     setupGLSLList([[0, 1], [0, 0]], 'ivec2', 'vectors', '', 3) ===
+ *     getGLSLList([[0, 1], [0, 0]], 'ivec2', 'vectors', '', 3) ===
  *           'ivec2 vectors[2] = ivec2[2](ivec2(0, 1), ivec2(0, 0));';
  *
- *     setupGLSLList([0, 1], 'int', undefined, 'const') ===
+ *     getGLSLList([0, 1], 'int', undefined, 'const') ===
  *           'const int name_0 = int(0); '+
  *           'const int name_1 = int(1);';
  *
@@ -74,8 +74,8 @@ export const setupGLSL1List = (type, a, name = 'name', qualifier = '') =>
  *
  * @returns {string} The GLSL array initialisation syntax.
  */
-export const setupGLSLList = (type, a, name = 'name', qualifier = '', version = 1) =>
-    ((version >= 3)? setupGLSL3List : setupGLSL1List)(type, a, name, qualifier);
+export const getGLSLList = (type, a, name = 'name', qualifier = '', version = 1) =>
+    ((version >= 3)? getGLSL3List : getGLSL1List)(type, a, name, qualifier);
 
 /**
  * Whether macros should be created; or the result of creating them elsewhere.
@@ -109,9 +109,9 @@ export const checkGPGPUMacros = (props, key, macros = props.macros) =>
  * Caches the result if `macros` generation is enabled, to help reuse shaders.
  *
  * @see checkGPGPUMacros
- * @see setupGLSLList
+ * @see getGLSLList
  * @see [getGPGPUSamplesMap]{@link ./maps.js#getGPGPUSamplesMap}
- * @see [getGPGPUSetup]{@link ./setup.js#getGPGPUSetup}
+ * @see [getGPGPUState]{@link ./state.js#getGPGPUState}
  *
  * @example
  *     macroGPGPUSamples({
@@ -149,9 +149,9 @@ export const checkGPGPUMacros = (props, key, macros = props.macros) =>
  * @param {array.<array.<array.<number>>>} props.reads The mappings from values to
  *     the corresponding `props.samples` - see `getGPGPUSamplesMap`.
  * @param {string} [qualifier='const'] Whether the generated variables should have a
- *     GLSL qualifier such as `const` - see `setupGLSLList`.
+ *     GLSL qualifier such as `const` - see `getGLSLList`.
  * @param {number} [version=1] Any GLSL language version that needs to be specified -
- *     see `setupGLSLList`.
+ *     see `getGLSLList`.
  * @param {boolean} [loop=true] Whether to generate GLSL preprocessor macros for doing
  *     some of the loop lookup logic.
  *
@@ -180,7 +180,7 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
     return (cache[c] || (cache[c] =
         ((!passSamples)? ''
         :   `#define ${m}UseSamples `+
-                setupGLSLList('ivec2', passSamples, `${m}Samples`, qualifier, version)+
+                getGLSLList('ivec2', passSamples, `${m}Samples`, qualifier, version)+
             '\n'+
             // Handle the whole `for` loop and indexing logic, as it's a pain to repeat.
             ((!loop)? ''
@@ -205,7 +205,7 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
         ((!passReads)? ''
         :   reduce((out, valueReads, v) =>
                     out+`#define ${m}UseReads_${v} `+
-                        setupGLSLList('int', valueReads, `${m}Reads_${v}`,
+                        getGLSLList('int', valueReads, `${m}Reads_${v}`,
                             qualifier, version)+
                         '\n',
                 passReads, ''))));
@@ -218,7 +218,7 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
  *
  * @see checkGPGPUMacros
  * @see [getGPGPUGroupsMap]{@link ./maps.js#getGPGPUGroupsMap}
- * @see [getGPGPUSetup]{@link ./setup.js#getGPGPUSetup}
+ * @see [getGPGPUState]{@link ./state.js#getGPGPUState}
  *
  * @example
  *     const props = {
@@ -237,11 +237,11 @@ export function macroGPGPUSamples(props, qualifier = 'const', version = 1, loop 
  *
  * @export
  * @param {object.<array.<number>, array.<array.<number>>>} props Properties used to
- *     generate the macros - see `getGPGPUSetup`:
+ *     generate the macros - see `getGPGPUState`:
  * @param {(string|function|object|falsey)} [props.macros=defaultMacros] How macros
  *     should be generated - see `checkGPGPUMacros`.
  * @param {array.<number>} props.values How values of each data item may be grouped
- *     into textures - see `getGPGPUSetup`.
+ *     into textures - see `getGPGPUState`.
  * @param {array.<array.<number>>} props.groups.textures The groupings of values into
  *     textures - see `getGPGPUGroupsMap`.
  *
@@ -290,7 +290,7 @@ export function macroGPGPUValues(props) {
  * @see macroGPGPUValues
  * @see macroGPGPUSamples
  * @see [getGPGPUGroupsMap]{@link ./maps.js#getGPGPUGroupsMap}
- * @see [getGPGPUSetup]{@link ./setup.js#getGPGPUSetup}
+ * @see [getGPGPUState]{@link ./state.js#getGPGPUState}
  *
  * @example
  *     const props = {
@@ -376,14 +376,14 @@ export function macroGPGPUValues(props) {
  *         macroGPGPUSamples(props)+'\n';
  *
  * @export
- * @param {object} props Properties used to generate the macros - see `getGPGPUSetup`:
+ * @param {object} props Properties used to generate the macros - see `getGPGPUState`:
  * @param {(string|function|object|falsey)} [props.macros=defaultMacros] How macros
  *     should be generated - see `checkGPGPUMacros`.
  * @param {number} props.pass The index of the currently active pass.
  * @param {number} props.steps.length The number of states to be drawn across frames -
- *     see `getGPGPUSetup`.
+ *     see `getGPGPUState`.
  * @param {array.<number>} props.values How values of each data item may be grouped
- *     into textures across passes - see `getGPGPUSetup`.
+ *     into textures across passes - see `getGPGPUState`.
  *
  * @param {object.<array.<array.<number>>, array.<array.<number>>>} props.groups
  *     The groupings of values to be drawn across passes - see `getGPGPUGroupsMap`.

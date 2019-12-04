@@ -1,0 +1,54 @@
+# Notes
+
+## Approach
+- References
+  - Core best referred to at [#18](18 - Fluid Surface Extractionand Rendering/code/VortonFluid/vorton.h).
+- Start with a brute-force, pure, naïve approach - to avoid pre-optimisation.
+  - Separated concerns:
+    - Fluid particles (vortons)
+      - Direct summation first - simplest and reference.
+    - Rendering tracers.
+      - General renderer setup and lifecycle.
+      - Tracer particles:
+        - GPGPU ping-pong buffers drawn in line segment pairs of current/past positions (after Lumens).
+    - Spatial partitions, and derived calculations/lookups/interpolations.
+      - Grids, textures.
+      - More to be investigated below.
+- Optimisations, improvements, and considerations:
+  - Spatial partitions, alternatives to the `uniform grid`:
+    - [Excellent collision overview, streaming segment trees, and benchmark comparisons](https://0fps.net/2015/01/23/collision-detection-part-3-benchmarks/)
+    - Important for both speed and accuracy; the articles initially avoid delving into spatial partition approaches, then go on to fundamentally rely on them and compensate for sampling errors arising from them.
+    - Could this be a simpler case of tracking nearest neighbours (maybe weighted by distance, such as with SPH)? An interpolation could be made this way; the vorton neighbours are the sample points for which the fluid properties are known.
+    - Does the mesh/spatial partition have to be of uniform cell size to work for interpolations/tree-code...?
+      - KD-tree cells aren't square-ish; octree cells are. Does uniformity affect the fidelity of the fluid sim operations (interpolation, "supervortons", etc)?
+      - KD-tree traversal involves lots of ascending/descending the hierarchy(?); octrees are more regular and predicatble(?).
+      - Reducing jerkiness and improving sampling accuracy is helped by particles and the spatial partition to be aligned (see Particle-In-Cell method?)... best to use KD-tree there?
+    - BVH / R-tree
+      - How would interpolation work? Simply sum/integrate of nearest volumes, divided by their distance (similar to the supervorton abstraction or SPH kernels)?
+  - Filaments instead of points?
+    - See:
+      - Gourlay's final summary points.
+      - [This paper](http://www-evasion.imag.fr/Publications/2005/AN05/paper0132.pdf)
+      - David Li's implementations of [vorticity filaments](https://github.com/dli/vortexspheres) and [FLIP](http://david.li/fluid/)
+  - Smoothed Partical Hydrodynamics:
+    - Promising approach for surfaces, surface tension, viscosity, and interfaces/boundaries (gas-liquid, etc).
+    - See:
+      - Gourlay's failed attempt to combine the approaches.
+      - The papers detailed on [Tom Madam's I'm Doing it Wrong](https://imdoingitwrong.wordpress.com/2010/12/14/why-my-fluids-dont-flow/) and [Softology](https://softologyblog.wordpress.com/2018/09/04/3d-multiphase-smoothed-particle-hydrodynamics/) - in order of attempt:
+        - [Particle-Based Fluid Simulation for Interactive Applications](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.2.7720&rep=rep1&type=pdf)
+        - [Particle-based Viscoelastic Fluid Simulation](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.59.9379&rep=rep1&type=pdf)
+        - [Weakly compressible SPH for free surface flows](https://cg.informatik.uni-freiburg.de/publications/2007_SCA_SPH.pdf)
+      - [The publications of Computer Graphics at University of Freiburg](https://cg.informatik.uni-freiburg.de/publications.htm), which demonstrate treatments of the continuum between solid to liquid (to gas?) in SPH, and include a [recent survey of multi-phase/-fluid techniques](https://cg.informatik.uni-freiburg.de/publications/2018_JCST_multipleFluids.pdf).
+      - Other papers:
+        - [Divergence-Free Smoothed Particle Hydrodynamics](https://animation.rwth-aachen.de/media/papers/2015-SCA-DFSPH.pdf)
+        - [An Advection-Reflection Solver for Detail-Preserving Fluid Simulation](https://jzehnder.me/publications/advectionReflection/paper.pdf)
+    - Industry-leading approaches:
+      - [FLIP Fluids Blender add-on](https://github.com/rlguy/Blender-FLIP-Fluids).
+      - [Mantaflow](http://mantaflow.com/) (Blender main).
+      - *Material Point Method (MPM)*.
+        - [A Moving Least Squares Material Point Method with Displacement Discontinuity and Two-Way Rigid Body Coupling](http://taichi.graphics/wp-content/uploads/2019/03/mls-mpm-cpic.pdf)
+        - [Summary](https://en.wikipedia.org/wiki/Material_point_method): seems simple, covers multiple phases
+    - Surfaces:
+      - Level sets (or Particle Level Sets).
+      - Surface tension.
+      - Whitewater.

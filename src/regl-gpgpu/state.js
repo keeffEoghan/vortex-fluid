@@ -1,5 +1,5 @@
 /**
- * GPGPU ping-pong buffers, setup.
+ * GPGPU ping-pong buffers, state.
  *
  * @todo In-place updates of complex resources and meta info.
  * @todo Use transform feedback instead of data textures where supported (WebGL2)?
@@ -11,7 +11,7 @@ import { range, map, reduce } from '../util/array';
 import { getGPGPUGroupsMap, getGPGPUSamplesMap } from './maps';
 
 /**
- * The required and optional WebGL extensions for this GPGPU setup.
+ * The required and optional WebGL extensions for this GPGPU state.
  *
  * @todo
  * For drawing into floating-point buffers:
@@ -40,42 +40,42 @@ export const optionalExtensions = ['webgl_draw_buffers'];
  *
  * @export
  * @param {regl} regl The `regl` instance to use.
- * @param {object} [setup={}] The setup parameters.
- * @param {number} [setup.radius] The length of the sides of the data textures to
- *     allocate. If given, supersedes `setup.width`, `setup.height`, and `setup.scale`.
- * @param {number} [setup.width] The width of the data textures to allocate. If given,
- *     supersedes `setup.scale`, if `setup.radius` isn't given.
- * @param {number} [setup.height] The height of the data textures to allocate. If given,
- *     supersedes `setup.scale`, if `setup.radius` isn't given.
- * @param {number} [setup.scale=10] The length of the sides of the data textures to
+ * @param {object} [state={}] The state parameters.
+ * @param {number} [state.radius] The length of the sides of the data textures to
+ *     allocate. If given, supersedes `state.width`, `state.height`, and `state.scale`.
+ * @param {number} [state.width] The width of the data textures to allocate. If given,
+ *     supersedes `state.scale`, if `state.radius` isn't given.
+ * @param {number} [state.height] The height of the data textures to allocate. If given,
+ *     supersedes `state.scale`, if `state.radius` isn't given.
+ * @param {number} [state.scale=10] The length of the sides of the data textures to
  *     allocate. Given as the power by which to raise 2, ensuring a power-of-two square
- *     texture. Used if `setup.width`, `setup.height`, or `setup.radius` aren't given.
- * @param {number} [setup.steps=2] How many steps of state to track (should be > 1).
- * @param {array.<number>} [setup.values=[4]] How values of each data item may be
+ *     texture. Used if `state.width`, `state.height`, or `state.radius` aren't given.
+ * @param {number} [state.steps=2] How many steps of state to track (should be > 1).
+ * @param {array.<number>} [state.values=[4]] How values of each data item may be
  *     grouped into textures across passes - see `getGPGPUGroupsMap` and `out.groups`.
- * @param {number} [setup.texturesMax=regl.limits.maxDrawbuffers] The maximum number of
+ * @param {number} [state.texturesMax=regl.limits.maxDrawbuffers] The maximum number of
  *     textures to use per draw pass. Extra passes will be used above this limit.
- * @param {string} [setup.type='float'] The data type of the textures.
- * @param {array.<array.<(null|number|array.<number>)>>} [setup.derives] Any values
+ * @param {string} [state.type='float'] The data type of the textures.
+ * @param {array.<array.<(null|number|array.<number>)>>} [state.derives] Any values
  *     which derive their state from other values - see `getGPGPUSamplesMap`.
- * @param {(string|function|falsey)} [setup.macros] How GLSL preprocessor macro
+ * @param {(string|function|falsey)} [state.macros] How GLSL preprocessor macro
  *     definitions and prefixes may be generated later - see `macroGPGPUPass`.
- * @param {object} [out=setup] The state object to set up. Modifies the given `setup`
+ * @param {object} [out=state] The state object to set up. Modifies the given `state`
  *     object by default; new object if not given.
  *
  * @returns {object} `out` The state object, set up with the data resources and meta
  *     information, for later step/draw:
- * @returns {array} `out.values` The given `setup.values`.
- * @returns {array} `[out.derives]` The given `setup.derives`, if any.
- * @returns {number} `out.texturesMax` The given `setup.texturesMax`.
- * @returns {(string|function|falsey)} `out.macros` The given `setup.macros`.
+ * @returns {array} `out.values` The given `state.values`.
+ * @returns {array} `[out.derives]` The given `state.derives`, if any.
+ * @returns {number} `out.texturesMax` The given `state.texturesMax`.
+ * @returns {(string|function|falsey)} `out.macros` The given `state.macros`.
  * @returns {object.<array.<number>, array.<array.<number>>, array.<array.<number>>>}
- *     `out.groups` How `setup.values` are grouped into textures and passes per step -
+ *     `out.groups` How `state.values` are grouped into textures and passes per step -
  *     see `getGPGPUGroupsMap`.
  * @returns {array.<array.<array.<number>>>} `[out.groups.samples]` If any
- *     `setup.derives` were given, the samples are set up - see `getGPGPUSamplesMap`.
+ *     `state.derives` were given, the samples are set up - see `getGPGPUSamplesMap`.
  * @returns {array.<array.<array.<number>>>} `[out.groups.reads]` If any
- *     `setup.derives` were given, the reads are set up - see `getGPGPUSamplesMap`.
+ *     `state.derives` were given, the reads are set up - see `getGPGPUSamplesMap`.
  * @returns {object.<number>} `out.size` Info about the sizes of the resources created.
  * @returns {array.<array.<object.<regl.texture, array.<number>, number,...>>>}
  *     `out.textures` Textures per step, as arrays of objects of `regl.textures`, and
@@ -91,7 +91,7 @@ export const optionalExtensions = ['webgl_draw_buffers'];
  * @returns {number} `out.step` The currently active state step.
  * @returns {number} `out.pass` The currently active framebuffer pass.
  */
-export function getGPGPUSetup(regl, setup = {}, out = setup) {
+export function getGPGPUState(regl, state = {}, out = state) {
     const {
             radius,
             width,
@@ -105,7 +105,7 @@ export function getGPGPUSetup(regl, setup = {}, out = setup) {
             type = 'float',
             macros,
             derives
-        } = setup;
+        } = state;
 
     out.values = values;
     out.texturesMax = texturesMax;
@@ -120,7 +120,7 @@ export function getGPGPUSetup(regl, setup = {}, out = setup) {
     // How the resources will be created for each pass, according to given `values`.
     const groups = out.groups = getGPGPUGroupsMap(values, texturesMax, channelsMax);
 
-    // Passing `setup.scale` ensures a power-of-two square texture size.
+    // Passing `state.scale` ensures a power-of-two square texture size.
     const textureSetup = {
         type,
         width: (radius || width || 2**scale),
@@ -203,4 +203,4 @@ export function getGPGPUSetup(regl, setup = {}, out = setup) {
     return out;
 }
 
-export default getGPGPUSetup;
+export default getGPGPUState;

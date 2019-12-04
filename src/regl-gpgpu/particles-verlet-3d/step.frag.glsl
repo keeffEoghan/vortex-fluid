@@ -50,6 +50,14 @@ uniform vec2 lifetime;
 
 varying vec2 uv;
 
+const vec3 g = vec3(0, -0.00098, 0);
+const vec3 spawnPos = vec3(0);
+const vec3 spawnAcc = vec3(0.5, 0.5, 0);
+const vec4 ndcRange = vec4(-1, -1, 1, 1);
+const vec4 stRange = vec4(0, 0, 1, 1);
+
+#pragma glslify: map = require('glsl-map');
+
 #ifdef outputPos
     #pragma glslify: verlet = require('../../physics/verlet');
 #endif
@@ -58,14 +66,10 @@ varying vec2 uv;
     #pragma glslify: random = require('glsl-random');
 #endif
 
-const vec3 g = vec3(0, -0.00098, 0);
-const vec3 spawnPos = vec3(0);
-const vec3 spawnAcc = vec3(0.5, 0.5, 0);
-
 void main() {
     // Sample textures.
 
-    vec2 st = (uv+vec2(1.0))*0.5;
+    vec2 st = map(uv, ndcRange.xy, ndcRange.zw, stRange.xy, stRange.zw);
 
     GPGPUTapSamples(sampled, states, st)
     // GPGPUTapSamples(sampled, states, uv)
@@ -103,7 +107,8 @@ void main() {
 
     #if defined(outputLife) || defined(outputPos) || defined(outputAcc)
         // float life = max(0.0, life1-dt);
-        float life = life1-dt;
+        // float life = life1-dt;
+        float life = life1-(dt*0.001);
         // float alive = 1.0-step(life, 0.0);
         float alive = ((life > 0.0)? 1.0 : 0.0);
     #endif
@@ -127,13 +132,25 @@ void main() {
 
     #ifdef outputPos
         // outputPos = pos;
-        outputPos = vec3(1, 0, 0);
+        // outputPos = vec3(1, 0, 0);
+        outputPos = vec3(uv, 0);
     #endif
     #ifdef outputLife
         outputLife = life;
+        outputPos.r = life;
+        // outputPos.r = alive;
     #endif
     #ifdef outputAcc
         // outputAcc = acc;
-        outputPos = vec3(0, 1, 0);
+        // outputAcc = vec3(0, 1, 0);
+        outputAcc = vec3(0, st);
     #endif
+
+    // gl_FragData[0] = vec4(1, 0, 0, 1);
+    // gl_FragData[1] = vec4(0, 1, 0, 1);
+    // gl_FragData[0] = vec4(uv, 0, 1);
+    // gl_FragData[1] = vec4(0, st, 1);
+    // gl_FragData[0].rgb = vec3(uv, 0);
+    // gl_FragData[1].rgb = vec3(0, st);
+    // gl_FragData[0].a = gl_FragData[1].a = 1.0;
 }

@@ -690,6 +690,11 @@
   dependencies:
     commander "^2.15.1"
 
+"@epok.tech/gl-screen-triangle@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@epok.tech/gl-screen-triangle/-/gl-screen-triangle-1.0.0.tgz#a2edc3288d2be44fca77c6197cfb7ba81651b46b"
+  integrity sha512-O3f6+eTj8XDTdb1DRmqWmkgINUYu3QTic/h84h+oQkKEr2ptsGm3Al+Hh5BSGrcPJf62blCdlSSUAHdJEtff1A==
+
 "@iarna/toml@^2.2.0":
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.3.tgz#f060bf6eaafae4d56a7dac618980838b0696e2ab"
@@ -2441,6 +2446,11 @@ glsl-inject-defines@^1.0.1:
     glsl-token-string "^1.0.1"
     glsl-tokenizer "^2.0.2"
 
+glsl-map@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/glsl-map/-/glsl-map-1.0.1.tgz#5ff0df638876bb66fdad010a3c641479eb9015a5"
+  integrity sha1-X/DfY4h2u2b9rQEKPGQUeeuQFaU=
+
 glsl-random@^0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/glsl-random/-/glsl-random-0.0.5.tgz#bd00c8c1ab1f5587e5fe2d48e83c50c5b9798b5b"
@@ -2512,6 +2522,11 @@ glsl-tokenizer@^2.0.0, glsl-tokenizer@^2.0.2:
   integrity sha512-XSZEJ/i4dmz3Pmbnpsy3cKh7cotvFlBiZnDOwnj/05EwNp2XrhQ4XKJxT7/pDt4kp4YcpRSKz8eTV7S+mwV6MA==
   dependencies:
     through2 "^0.6.3"
+
+glsl-y-compare@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/glsl-y-compare/-/glsl-y-compare-1.0.0.tgz#390c42abeb7610c6955131c32aa4d937d4977758"
+  integrity sha512-W8M4JomjA7rSEfDH+6QuxyseDu2OMK5NVjsKghzb6B76O9bkUF8GzmiyGwZspDjXS3LhllnF8tLlWzlYI2yJcQ==
 
 glslify-bundle@^5.1.1:
   version "5.1.1"
